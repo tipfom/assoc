@@ -20,7 +20,8 @@ namespace assoc {
              *  
              *  additional args:
              *      -i "path"           Image for the file
-             *      -d "description"    Description for the file 
+             *      -fd "description"   Description for the filetype
+             *      -pd "description"   Description for the programtype
              *      -t "type"           Content Type
              *      
              *  when -r = remove
@@ -45,7 +46,8 @@ namespace assoc {
                 AddExtension(extension, application, id,
                     additionals.ContainsKey("-t") ? additionals["-t"] : null,
                     additionals.ContainsKey("-i") ? additionals["-i"] : null,
-                    additionals.ContainsKey("-d") ? additionals["-d"] : null);
+                    additionals.ContainsKey("-fd") ? additionals["-fd"] : null,
+                    additionals.ContainsKey("-pd") ? additionals["-pd"] : null);
             } else if (args[0] == "-r" && args.Length > 2) {
                 RemoveExtension(args[1], args[2]);
             }
@@ -57,7 +59,7 @@ namespace assoc {
             WriteLine("\t-r \"extension\" \"name\" \tremoves an file extension assosiation");
         }
 
-        private static void AddExtension (string extension, string applicationpath, string id, string type = null, string icon = null, string description = null) {
+        private static void AddExtension (string extension, string applicationpath, string id, string type = null, string icon = null, string typedescription = null, string programdescription = null) {
             if (Registry.ClassesRoot.OpenSubKey(extension) != null) {
                 Registry.ClassesRoot.DeleteSubKeyTree(extension);
             }
@@ -73,19 +75,25 @@ namespace assoc {
                     subkey.SetValue(id, "");
                 }
 
-                if (description != null) {
-                    key.SetValue("", description);
+                if (typedescription != null) {
+                    key.SetValue("", typedescription);
                 }
                 if (type != null) {
                     key.SetValue("Content Type", type);
                 }
                 if (icon != null) {
                     key.CreateSubKey("DefaultIcon").SetValue("", icon);
+                } else {
+                    key.CreateSubKey("DefaultIcon").SetValue("", applicationpath);
                 }
             }
 
             using (RegistryKey key = Registry.ClassesRoot.CreateSubKey(id)) {
+                if(programdescription != null) {
+                    key.SetValue("", programdescription);
+                }
                 key.CreateSubKey(@"shell\open\command").SetValue("", "\"" + applicationpath + "\"" + " \"%1\"");
+                key.CreateSubKey("DefaultIcon").SetValue("", applicationpath);
             }
 
             WriteLine("Done!");
